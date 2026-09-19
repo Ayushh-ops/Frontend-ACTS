@@ -31,7 +31,7 @@ const Login = () => {
             const role = userRes.is_admin ? 'admin' : 'citizen';
 
             login(role);
-            navigate(role === 'admin' ? '/admin' : '/report');
+            navigate(role === 'admin' ? '/admin/dashboard' : '/report');
         } catch (err) {
             setError('Invalid credentials');
         } finally {

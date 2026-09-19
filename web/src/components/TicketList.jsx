@@ -75,7 +75,7 @@ const TicketList = () => {
 
     return (
         <MobileLayout title="Triage Inbox" headerClass="bg-acts-admin" showNav={true} onFilterClick={() => setShowFilter(!showFilter)}>
-            <div className="p-4 relative" style={{ minHeight: '100%' }}>
+            <div className="p-4 relative min-h-full bg-slate-50">
 
                 {toastMessage && (
                     <div className="absolute top-[20px] left-[50%] translate-x-[-50%] bg-[#323232] text-white px-4 py-2 rounded shadow-2xl z-[2000] whitespace-nowrap text-[13px] font-bold tracking-wide">

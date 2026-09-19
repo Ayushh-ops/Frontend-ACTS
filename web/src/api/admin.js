@@ -30,3 +30,13 @@ export const updateClusterStatus = (clusterId, status) => {
         body: JSON.stringify({ status })
     });
 };
+
+export const updateClusterPriority = (clusterId, priority) => {
+    return fetchClient(`/admin/clusters/${clusterId}/override-priority/`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ priority: parseFloat(priority) })
+    });
+};

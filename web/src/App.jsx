@@ -2,6 +2,7 @@ import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import ReportForm from './components/ReportForm';
 import TicketList from './components/TicketList';
+import AdminDashboard from './components/AdminDashboard';
 import MapView from './components/MapView';
 import IssueDetail from './components/IssueDetail';
 import Login from './components/Login';
@@ -13,8 +14,8 @@ import ProtectedRoute from './components/ProtectedRoute';
 function App() {
   return (
     <RoleProvider>
-      <div className="min-h-screen">
-        <div className="flex justify-center pb-8 pt-8 px-4 h-screen items-center overflow-auto">
+      <div className="min-h-[100dvh] bg-[#eceff1]">
+        <div className="flex justify-center sm:py-8 sm:px-4 h-[100dvh] items-center">
           <Routes>
             <Route path="/" element={<Navigate to="/login" replace />} />
             <Route path="/login" element={<Login />} />
@@ -28,6 +29,7 @@ function App() {
 
             {/* Admin Routes */}
             <Route element={<ProtectedRoute allowedRoles={['admin']} />}>
+              <Route path="/admin/dashboard" element={<AdminDashboard />} />
               <Route path="/admin" element={<TicketList />} />
             </Route>
 

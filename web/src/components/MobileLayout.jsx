@@ -19,7 +19,7 @@ const MobileLayout = ({ children, title, headerClass, icon, showNav = false, onF
     };
 
     return (
-        <div className="w-[320px] h-[680px] bg-[#f8f9fa] rounded-[36px] shadow-2xl border-[10px] border-[#263238] overflow-hidden flex flex-col relative mx-auto shrink-0">
+        <div className="w-full h-[100dvh] sm:h-[90dvh] max-w-full sm:max-w-sm md:max-w-md lg:max-w-lg bg-[#f8f9fa] sm:rounded-[36px] shadow-2xl sm:border-[8px] sm:border-[#263238] overflow-hidden flex flex-col relative mx-auto shrink-0 transition-all duration-300">
             <div className={`text-white p-[20px] pb-[16px] px-[16px] flex items-center justify-between text-[18px] font-medium shrink-0 ${headerClass}`}>
                 <div className="flex items-center gap-4">
                     {icon}
@@ -73,6 +73,13 @@ const MobileLayout = ({ children, title, headerClass, icon, showNav = false, onF
 
             {showNav && role === 'admin' && (
                 <div className="bg-white border-t border-[#cfd8dc] flex items-center justify-around py-3 shrink-0">
+                    <button
+                        onClick={() => navigate('/admin/dashboard')}
+                        className={`flex flex-col items-center gap-1 ${getNavColor('/admin/dashboard')} hover:text-acts-teal transition-colors`}
+                    >
+                        <span className="material-icons text-[24px]">dashboard</span>
+                        <span className="text-[10px] font-bold">Dashboard</span>
+                    </button>
                     <button
                         onClick={() => navigate('/admin')}
                         className={`flex flex-col items-center gap-1 ${getNavColor('/admin')} hover:text-acts-teal transition-colors`}

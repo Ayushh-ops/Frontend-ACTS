@@ -24,7 +24,7 @@ const Notifications = () => {
 
     return (
         <MobileLayout title="Notifications" headerClass="bg-acts-citizen" showNav={true}>
-            <div className={`p-4 flex flex-col h-full bg-slate-50 relative ${notifications.length === 0 ? 'items-center justify-center text-center' : ''}`}>
+            <div className={`p-4 flex flex-col min-h-full bg-slate-50 relative ${notifications.length === 0 ? 'items-center justify-center text-center' : ''}`}>
                 {loading && <div className="text-gray-500 py-6 text-center w-full font-medium">Loading notifications...</div>}
 
                 {!loading && error && <div className="text-red-500 py-6 text-center w-full font-medium">{error}</div>}
