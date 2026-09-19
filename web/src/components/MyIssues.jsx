@@ -58,7 +58,7 @@ const MyIssues = () => {
 
     return (
         <MobileLayout title="My Issues" headerClass="bg-acts-citizen" showNav={true} onFilterClick={() => setShowFilter(!showFilter)}>
-            <div className="p-4 flex flex-col h-full bg-slate-50 relative">
+            <div className="p-4 flex flex-col min-h-full bg-slate-50 relative">
                 {showFilter && (
                     <div className="bg-white p-4 rounded-xl shadow-md border border-slate-200 mb-4 z-10 transition-all shrink-0">
                         <div className="flex justify-between items-center mb-3">

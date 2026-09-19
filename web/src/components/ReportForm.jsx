@@ -110,7 +110,7 @@ const ReportForm = () => {
 
     return (
         <MobileLayout title="Report Civic Issue" headerClass="bg-acts-citizen" showNav={true}>
-            <div className="p-4 flex flex-col h-full">
+            <div className="p-4 flex flex-col min-h-full">
                 {errorMessage && (
                     <div className="bg-red-100 text-red-800 p-2 rounded mb-4 text-[13px] border border-red-300">
                         {errorMessage}
