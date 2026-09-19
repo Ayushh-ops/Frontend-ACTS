@@ -78,6 +78,7 @@ class ComplaintCreateView(APIView):
 
         # 4. Crowd-Weighted Clustering (Duplicate Merging & Urgency Climbing)
         cluster, is_new = cluster_and_weight_complaint(complaint)
+        complaint.save(update_fields=["cluster"])
 
         # 5. Smart Routing Engine (Auto-dispatch nearest available crew)
         if not cluster.assigned_crew:
