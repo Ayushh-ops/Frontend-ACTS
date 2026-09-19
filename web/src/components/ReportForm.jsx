@@ -78,7 +78,6 @@ const ReportForm = () => {
         setErrorMessage('');
 
         const formData = new FormData();
-        formData.append('user_identifier', 'anonymous_user'); // Required by backend
         formData.append('raw_text', description);
         formData.append('latitude', location.lat);
         formData.append('longitude', location.lng);
@@ -95,7 +94,7 @@ const ReportForm = () => {
             if (response && response.complaint && response.complaint.id) {
                 navigate(`/issue/${response.complaint.id}`, {
                     state: {
-                        from: '/',
+                        from: '/report',
                         clusterId: response.cluster_id,
                         complaintId: response.complaint.id
                     }
@@ -162,7 +161,12 @@ const ReportForm = () => {
                     <span className="material-icons mr-2">my_location</span>
                     <span className="flex-1">
                         {locStatus === 'loading' ? 'Locating...' :
-                            locStatus === 'success' && location ? `${location.lat.toFixed(4)}° N, ${location.lng.toFixed(4)}° E (Auto-captured)` :
+                            locStatus === 'success' && location ? (
+                                <div className="flex flex-col">
+                                    <span>📍 Main Campus</span>
+                                    <span className="text-[10px] text-gray-500">GPS location captured internally</span>
+                                </div>
+                            ) :
                                 'Location unavailable'}
                     </span>
                     {locStatus === 'error' && (
@@ -175,7 +179,7 @@ const ReportForm = () => {
                     disabled={submitStatus === 'submitting'}
                     className={`text-white border-none py-[14px] rounded-[10px] w-full text-[15px] font-bold transition-opacity mt-auto shrink-0 ${submitStatus === 'submitting' ? 'bg-gray-400 cursor-not-allowed' : 'bg-acts-citizen cursor-pointer hover:opacity-90'}`}
                 >
-                    {submitStatus === 'submitting' ? 'Submitting report...' : 'Submit to AI Pipeline'}
+                    {submitStatus === 'submitting' ? 'Submitting report...' : 'Submit'}
                 </button>
             </div>
         </MobileLayout>

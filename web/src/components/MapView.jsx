@@ -13,6 +13,8 @@ const MapView = () => {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedIssue, setSelectedIssue] = useState(null);
+    const [activeFilter, setActiveFilter] = useState('All');
+    const [toastMessage, setToastMessage] = useState(null);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -31,19 +33,11 @@ const MapView = () => {
     }, []);
 
     const handlePreviewClick = async (marker) => {
-        try {
-            const data = await getComplaints();
-            const allComplaints = Array.isArray(data) ? data : (data.results || []);
-            const related = resolveComplaintForCluster(marker.id, allComplaints);
-
-            if (related && related.id) {
-                navigate(`/issue/${related.id}`, { state: { from: location.pathname } });
-            } else {
-                alert("This cluster has no directly viewable complaint detail associated yet.");
-            }
-        } catch (e) {
-            console.error(e);
-            alert("Error finding associated complaint.");
+        if (marker.preview_complaint_id) {
+            navigate(`/issue/${marker.preview_complaint_id}`, { state: { from: location.pathname } });
+        } else {
+            setToastMessage("This cluster has no directly viewable complaint detail associated yet.");
+            setTimeout(() => setToastMessage(null), 3500);
         }
     };
 
@@ -61,6 +55,22 @@ const MapView = () => {
         return L.divIcon({ html: htmlString, className: 'custom-leaflet-pin', iconSize: [28, 36] });
     };
 
+    // Filter Logic
+    const filteredMarkers = markers.filter(marker => {
+        const score = parseFloat(marker.computed_priority || marker.base_severity || 0);
+        if (activeFilter === 'Critical') return score >= 9;
+        if (activeFilter === 'High') return score >= 7 && score < 9;
+        if (activeFilter === 'Medium') return score >= 4 && score < 7;
+        if (activeFilter === 'Low') return score < 4;
+        return true;
+    });
+
+    const getFilterClass = (filterName) => {
+        return activeFilter === filterName
+            ? 'bg-acts-teal text-white border-acts-teal font-bold'
+            : 'bg-white text-gray-600 border-gray-300 hover:bg-gray-50';
+    };
+
     // Center on average of available markers or a default
     const centerLat = markers.length > 0 ? markers.reduce((sum, m) => sum + (m.latitude || 28), 0) / markers.length : 28.6291;
     const centerLng = markers.length > 0 ? markers.reduce((sum, m) => sum + (m.longitude || 77), 0) / markers.length : 77.4468;
@@ -69,8 +79,27 @@ const MapView = () => {
         <MobileLayout title="Live ACTS Map" headerClass="bg-acts-teal" showNav={true}>
             <div className="h-full relative w-full overflow-hidden border-t-2 border-acts-teal">
 
+                {toastMessage && (
+                    <div className="absolute top-[20px] left-[50%] translate-x-[-50%] bg-[#323232] text-white px-4 py-2 rounded shadow-2xl z-[2000] whitespace-nowrap text-[13px] font-bold tracking-wide">
+                        {toastMessage}
+                    </div>
+                )}
+
                 {loading && <div className="absolute inset-0 bg-white/70 z-50 flex items-center justify-center font-bold text-acts-teal">Loading live issues...</div>}
                 {error && <div className="absolute inset-0 bg-white min-h-[50px] z-50 p-4 text-center text-red-500">{error}</div>}
+
+                {/* Filters */}
+                <div className="absolute top-[12px] left-[12px] right-[12px] z-[1000] flex gap-2 overflow-x-auto pb-1 scrollbar-hide" style={{ msOverflowStyle: 'none', scrollbarWidth: 'none' }}>
+                    {['All', 'Critical', 'High', 'Medium', 'Low'].map(filterName => (
+                        <button
+                            key={filterName}
+                            onClick={() => setActiveFilter(filterName)}
+                            className={`px-3 py-1.5 rounded-full text-[12px] border shadow-sm whitespace-nowrap transition-colors outline-none shrink-0 ${getFilterClass(filterName)}`}
+                        >
+                            {filterName}
+                        </button>
+                    ))}
+                </div>
 
                 <MapContainer
                     center={[centerLat, centerLng]}
@@ -82,7 +111,7 @@ const MapView = () => {
                         attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
                         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                     />
-                    {markers.map(marker => (
+                    {filteredMarkers.map(marker => (
                         marker.latitude && marker.longitude && (
                             <Marker
                                 key={marker.id}

@@ -2,15 +2,21 @@ import React, { useEffect, useState, useRef } from 'react';
 import MobileLayout from './MobileLayout';
 import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { getComplaint } from '../api/complaints';
-import { getStatusDisplay, getStatusClasses } from '../utils/status';
+import { updateClusterStatus } from '../api/admin';
+import { getStatusDisplay, getCitizenStatusDisplay, getStatusClasses } from '../utils/status';
+import { useRole } from '../context/RoleContext';
+import { CheckCircle, Circle, Clock } from 'lucide-react';
 
 const IssueDetail = () => {
     const { id } = useParams();
     const navigate = useNavigate();
     const location = useLocation();
+    const { role } = useRole();
     const [complaint, setComplaint] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
+    const [showConfirmModal, setShowConfirmModal] = useState(false);
+    const [toastMessage, setToastMessage] = useState(null);
 
     // Image sizing logic for YOLO bounds
     const [imgDims, setImgDims] = useState({ w: 0, h: 0 });
@@ -41,19 +47,92 @@ const IssueDetail = () => {
         if (location.state && location.state.from) {
             navigate(location.state.from);
         } else {
-            navigate('/admin');
+            navigate(role === 'citizen' ? '/report' : '/admin');
         }
+    };
+
+    const handleCompleteIssue = async () => {
+        try {
+            const targetId = complaint.cluster_details?.id || complaint.id;
+            await updateClusterStatus(targetId, 'RESOLVED');
+            setComplaint(prev => ({ ...prev, status: 'RESOLVED' }));
+            setShowConfirmModal(false);
+            setToastMessage("✓ Issue marked as completed");
+            setTimeout(() => setToastMessage(null), 3000);
+        } catch (err) {
+            setShowConfirmModal(false);
+            setToastMessage("Failed to update status");
+            setTimeout(() => setToastMessage(null), 3000);
+        }
+    };
+
+    const renderTimeline = (status) => {
+        const citizenStatus = getCitizenStatusDisplay(status);
+        const steps = ['Pending', 'Work in Progress', 'Completed'];
+        const activeIdx = steps.indexOf(citizenStatus) >= 0 ? steps.indexOf(citizenStatus) : 0;
+
+        const isCompleted = citizenStatus === 'Completed';
+
+        return (
+            <div className="flex flex-col mt-4 bg-slate-50 p-3 rounded-lg border border-slate-200">
+                <div className="text-[12px] font-bold text-[#546e7a] mb-2 uppercase tracking-wide">Status Timeline</div>
+                {steps.map((step, idx) => {
+                    const isPassed = idx < activeIdx;
+                    const isActive = idx === activeIdx;
+                    return (
+                        <div key={step} className="flex items-center mb-2 last:mb-0">
+                            <div className={`mr-3 ${isPassed || isActive ? 'text-acts-teal' : 'text-gray-300'}`}>
+                                {isPassed || (isActive && isCompleted) ? <CheckCircle size={16} /> : isActive ? <Clock size={16} /> : <Circle size={16} />}
+                            </div>
+                            <span className={`text-[13px] ${isActive ? 'font-bold text-[#263238]' : 'text-[#78909c]'}`}>
+                                {step}
+                            </span>
+                        </div>
+                    );
+                })}
+            </div>
+        );
     };
 
     return (
         <MobileLayout
-            title={`Ticket #${id?.split('-')[0] || ''}`}
-            headerClass="bg-acts-admin"
+            title={role === 'citizen' ? 'Issue Details' : `Ticket #${id?.split('-')[0] || ''}`}
+            headerClass={role === 'citizen' ? 'bg-acts-citizen' : 'bg-acts-admin'}
             icon={<span className="material-icons cursor-pointer" onClick={handleBack}>arrow_back</span>}
         >
             <div className="flex flex-col min-h-full bg-white relative">
-                {loading && <div className="absolute inset-0 bg-white z-50 flex items-center justify-center text-acts-admin">Loading issue details...</div>}
-                {error && <div className="absolute inset-0 bg-white z-50 flex items-center justify-center p-4 text-red-500 text-center">{error}</div>}
+
+                {toastMessage && (
+                    <div className="absolute top-4 left-1/2 transform -translate-x-1/2 bg-gray-900 text-white px-4 py-2 rounded-full shadow-lg z-50 font-medium text-sm flex items-center gap-2 animate-in fade-in duration-200">
+                        {toastMessage}
+                    </div>
+                )}
+
+                {showConfirmModal && (
+                    <div className="absolute inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
+                        <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-xl relative animate-in zoom-in duration-200">
+                            <h3 className="font-bold text-lg text-[#263238] m-0 mb-2">Mark as Completed?</h3>
+                            <p className="text-[#546e7a] text-sm m-0 mb-6">Are you sure this issue has been resolved?</p>
+                            <div className="flex gap-3 justify-end">
+                                <button
+                                    onClick={() => setShowConfirmModal(false)}
+                                    className="px-4 py-2 text-sm font-bold text-[#546e7a] hover:bg-gray-100 rounded-lg transition-colors border border-gray-200 bg-white"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCompleteIssue}
+                                    className="px-4 py-2 text-sm font-bold text-white bg-acts-admin hover:bg-opacity-90 rounded-lg transition-colors"
+                                >
+                                    Confirm
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {loading && <div className="absolute inset-0 bg-white z-40 flex items-center justify-center text-acts-admin">Loading issue details...</div>}
+                {error && <div className="absolute inset-0 bg-white z-40 flex items-center justify-center p-4 text-red-500 text-center">{error}</div>}
 
                 {!loading && !error && complaint && (
                     <>
@@ -98,8 +177,9 @@ const IssueDetail = () => {
                                 </div>
                                 <div>
                                     <h2 className="m-0 text-[18px] text-[#263238] uppercase font-black">{complaint.gemini_analysis?.title || 'Reported Issue'}</h2>
-                                    <div className="text-[#546e7a] text-[13px] font-bold mt-1">
-                                        C: {complaint.gemini_analysis?.category || 'General'} | D: {complaint.department || 'GENERAL'}
+                                    <div className="text-[#546e7a] text-[12px] font-bold mt-1 flex flex-col gap-0.5">
+                                        <div>Category: <span className="font-normal">{complaint.gemini_analysis?.category || 'General'}</span></div>
+                                        <div>Department: <span className="font-normal">{complaint.department || 'GENERAL'}</span></div>
                                     </div>
                                 </div>
                             </div>
@@ -127,10 +207,19 @@ const IssueDetail = () => {
 
                             {/* Meta Data */}
                             <div className="grid grid-cols-2 gap-2 mb-4 bg-slate-50 p-2 rounded text-[12px] border border-slate-200">
-                                <div><strong>Zone:</strong> {complaint.campus_zone}</div>
+                                <div className="col-span-2">
+                                    <strong>Location:</strong>
+                                    <div className="mt-1 flex items-center text-gray-700">
+                                        📍 {complaint.campus_zone}
+                                    </div>
+                                </div>
                                 <div><strong>Crowd Reports:</strong> {complaint.cluster_details?.report_count || 1}</div>
-                                <div><strong>Address:</strong> {complaint.address || 'N/A'}</div>
-                                <div><strong>GPS:</strong> {parseFloat(complaint.latitude || 0).toFixed(4)}, {parseFloat(complaint.longitude || 0).toFixed(4)}</div>
+                                {role === 'admin' && (
+                                    <>
+                                        <div><strong>Reported By:</strong> {complaint.user_identifier || 'anonymous_user'}</div>
+                                        <div className="col-span-2"><strong>GPS:</strong> {parseFloat(complaint.latitude || 0).toFixed(4)}, {parseFloat(complaint.longitude || 0).toFixed(4)}</div>
+                                    </>
+                                )}
                             </div>
 
                             {/* Crew & Admin Notes (if available) */}
@@ -149,10 +238,21 @@ const IssueDetail = () => {
                             {/* Status Section (Read Only) */}
                             <div className="bg-white border border-[#cfd8dc] rounded-lg p-3 flex justify-between items-center shadow-sm mt-auto">
                                 <span className="font-medium text-[14px]">Current Status:</span>
-                                <span className={`px-3 py-1.5 rounded-md font-bold text-[13px] ${getStatusClasses(complaint.status)}`}>
-                                    {getStatusDisplay(complaint.status)}
+                                <span className={`px-3 py-1.5 rounded-md font-bold text-[13px] ${getStatusClasses(complaint.status, role === 'citizen')}`}>
+                                    {role === 'citizen' ? getCitizenStatusDisplay(complaint.status) : getStatusDisplay(complaint.status)}
                                 </span>
                             </div>
+
+                            {role === 'citizen' && renderTimeline(complaint.status)}
+
+                            {role === 'admin' && complaint.status !== 'RESOLVED' && complaint.status !== 'CLOSED' && (
+                                <button
+                                    onClick={() => setShowConfirmModal(true)}
+                                    className="mt-4 w-full bg-acts-admin text-white py-3 rounded-lg font-bold hover:bg-slate-700 transition"
+                                >
+                                    Mark as Completed
+                                </button>
+                            )}
 
                         </div>
                     </>

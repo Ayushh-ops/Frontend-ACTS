@@ -2,7 +2,14 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localho
 
 export const fetchClient = async (endpoint, options = {}) => {
     const url = `${API_BASE_URL}${endpoint}`;
-    const response = await fetch(url, options);
+
+    const headers = { ...options.headers };
+    const token = localStorage.getItem('acts_token');
+    if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await fetch(url, { ...options, headers });
 
     if (!response.ok) {
         let errorMessage = 'Network error';

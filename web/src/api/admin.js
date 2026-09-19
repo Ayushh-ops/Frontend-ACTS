@@ -20,3 +20,13 @@ export const getCrews = () => {
 export const getConnectPortal = (department) => {
     return fetchClient(`/admin/connect/?department=${department}`);
 };
+
+export const updateClusterStatus = (clusterId, status) => {
+    return fetchClient(`/admin/clusters/${clusterId}/status/`, {
+        method: 'PATCH',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ status })
+    });
+};
